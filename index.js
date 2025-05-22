@@ -7,9 +7,11 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 
+require('dotenv').config();
+
 const app = express();
-const PORT = 3000;
-const SECRET = 'segredo_super_secreto';
+const PORT = process.env.PORT || 3000;
+const SECRET = process.env.SECRET || 'segredo_super_secreto';
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -142,9 +144,9 @@ app.post('/forgot', async (req, res) => {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: 'javaloucosapp@gmail.com', // Seu e-mail Gmail
-      pass: 'xzbn utxa gdlo uezn', // Senha de app do Gmail
-    },
+  user: process.env.EMAIL_USER,
+  pass: process.env.EMAIL_PASS,
+},
   });
   try {
     await transporter.verify(); // Testa conexão com o servidor SMTP
@@ -185,3 +187,4 @@ app.post('/reset/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
