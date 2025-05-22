@@ -1,0 +1,297 @@
+/* Reset e Configurações Gerais */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #000;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+  padding: 20px 0;
+  position: relative;
+}
+
+/* Container Principal */
+.container {
+  width: 100%;
+  max-width: 420px;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Logo */
+.logo-topo {
+  width: 60%;
+  max-width: 180px;
+  margin: 0 auto 20px;
+  display: block;
+}
+
+/* Títulos */
+h2 {
+  margin: 0 0 20px 0;
+  font-size: 1.5rem;
+  color: #ffd600;
+  text-align: center;
+}
+
+/* Formulário */
+form {
+  background: #111;
+  border: 1px solid #222;
+  padding: 20px;
+  border-radius: 16px;
+  width: 100%;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+label {
+  display: block;
+  margin: 12px 0 6px 0;
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #181818;
+  color: #fff;
+  font-size: 1rem;
+}
+
+input:focus {
+  border-color: #ffd600;
+  outline: none;
+  box-shadow: 0 0 0 2px #ffd60033;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(90deg, #ffd600 0%, #ffee58 100%);
+  color: #222;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-top: 15px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Links */
+.links-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+  width: 100%;
+}
+
+.separator {
+  color: #555;
+}
+
+a {
+  color: #ffd600;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Mensagens */
+.error {
+  color: #fff;
+  background: #e53935;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  width: 100%;
+}
+
+.success {
+  color: #222;
+  background: #ffd600;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-weight: 600;
+  width: 100%;
+}
+
+/* Patrocinadores */
+.patrocinadores-container {
+  width: 100%;
+  margin-top: 30px;
+  padding: 15px 0;
+  background: rgba(20, 20, 20, 0.9);
+}
+
+.patrocinadores-title {
+  text-align: center;
+  color: #ffd600;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.patrocinadores-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  padding: 0 10px;
+}
+
+.patrocinadores-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.patrocinador-img {
+  height: 30px;
+  max-width: 80px;
+  object-fit: contain;
+  opacity: 0.9;
+  transition: opacity 0.3s;
+  filter: brightness(0.9);
+}
+
+.patrocinador-img:hover {
+  opacity: 1;
+  filter: brightness(1.1);
+}
+
+/* Media Queries para Telas Maiores */
+@media (min-width: 768px) {
+  body {
+    padding: 40px 0;
+    justify-content: center;
+  }
+  
+  .container {
+    padding: 0;
+  }
+  
+  h2 {
+    font-size: 1.8rem;
+    margin-bottom: 25px;
+  }
+  
+  .patrocinadores-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px 0;
+  }
+  
+  .patrocinadores-title {
+    display: none;
+  }
+  
+  .patrocinadores-grid {
+    flex-direction: row;
+    justify-content: center;
+    gap: 25px;
+  }
+  
+  .patrocinadores-row {
+    gap: 20px;
+  }
+  
+  .patrocinador-img {
+    height: 40px;
+    max-width: 120px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .patrocinador-img {
+    height: 45px;
+    max-width: 150px;
+  }
+}
+
+/* Carteirinha específica */
+.carteirinha {
+  width: 100%;
+  max-width: 360px;
+  background: linear-gradient(135deg, #111 0%, #1c1c1c 100%);
+  border: 1px solid #333;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.95rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Foto com moldura brilhante */
+.foto-carteirinha {
+  display: block;
+  margin: 0 auto 16px auto;
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #ffd600;
+  box-shadow: 0 0 12px #ffd60055;
+  background: #222;
+}
+
+/* Nome em destaque */
+.carteirinha .nome {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffd600;
+  margin-bottom: 10px;
+}
+
+/* Linha de dados */
+.carteirinha .linha {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+/* Rótulo + valor em cada linha */
+.carteirinha .linha span:first-child {
+  font-weight: 600;
+  color: #aaa;
+}
+

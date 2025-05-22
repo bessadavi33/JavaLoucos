@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Recuperar Senha - JavaLoucos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <img src="logo.png" alt="Logo JavaLoucos" class="logo-topo">
+    <h2>Recuperar Senha</h2>
+    
+    <% if (error) { %>
+      <div class="error"><%= error %></div>
+    <% } %>
+    
+    <% if (success) { %>
+      <div class="success"><%= success %></div>
+    <% } %>
+
+    <form method="POST" action="/forgot">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" placeholder="E-mail" required>
+      
+      <button type="submit">Enviar código de redefinição</button>
+    </form>
+
+    <form method="POST" action="/reset/" class="reset-form">
+      <h3>Redefinir Senha</h3>
+      <label for="reset-email">E-mail</label>
+      <input type="email" id="reset-email" name="email" placeholder="E-mail" required>
+      
+      <label for="code">Código recebido</label>
+      <input type="text" id="code" name="code" placeholder="Código recebido" required>
+      
+      <label for="new-password">Nova senha</label>
+      <input type="password" id="new-password" name="password" placeholder="Nova senha" required>
+      
+      <label for="repeat-password">Repetir nova senha</label>
+      <input type="password" id="repeat-password" name="repeatPassword" placeholder="Repetir nova senha" required>
+      
+      <button type="submit">Redefinir senha</button>
+    </form>
+
+    <div class="links-container">
+      <a href="/">Voltar ao login</a>
+    </div>
+  </div>
+
+  <div class="patrocinadores-container">
+    <div class="patrocinadores-title">Nossos Patrocinadores:</div>
+    <div class="patrocinadores-grid">
+      <div class="patrocinadores-row">
+        <img src="1l1c.png" alt="Patrocinador 1" class="patrocinador-img">
+        <img src="1l2c.png" alt="Patrocinador 2" class="patrocinador-img">
+        <img src="1l3c.png" alt="Patrocinador 3" class="patrocinador-img">
+        <img src="1l4c.png" alt="Patrocinador 4" class="patrocinador-img">
+      </div>
+      <div class="patrocinadores-row">
+        <img src="2l1c.png" alt="Patrocinador 5" class="patrocinador-img">
+        <img src="2l2c.png" alt="Patrocinador 6" class="patrocinador-img">
+        <img src="2l3c.png" alt="Patrocinador 7" class="patrocinador-img">
+        <img src="2l4c.png" alt="Patrocinador 8" class="patrocinador-img">
+      </div>
+      <div class="patrocinadores-row">
+        <img src="3l1c.png" alt="Patrocinador 9" class="patrocinador-img">
+        <img src="3l2c.png" alt="Patrocinador 10" class="patrocinador-img">
+        <img src="3l3c.png" alt="Patrocinador 11" class="patrocinador-img">
+        <img src="3l4c.png" alt="Patrocinador 12" class="patrocinador-img">
+      </div>
+    </div>
+  </div>
+</body>
+</html>
