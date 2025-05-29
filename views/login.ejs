@@ -9,12 +9,7 @@
 <body>
   <div class="container">
     <img src="logo.png" alt="Logo JavaLoucos" class="logo-topo">
-    <h2>Associados JavaLoucos!</h2>
-    
-    <% if (error) { %>
-      <div class="error"><%= error %></div>
-    <% } %>
-    
+    <h2>Associados JavaLoucos!</h2>   
     <form method="POST" action="/login">
       <label for="email">E-mail</label>
       <input type="email" name="email" id="email" placeholder="E-mail" required>

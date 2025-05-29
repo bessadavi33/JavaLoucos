@@ -13,7 +13,7 @@
       <% if (tipo === 'admin') { %>
         Gerenciar Carteirinhas
       <% } else { %>
-        Carteirinha Associado JavaLoucos
+        Carteirinha Associados JavaLoucos
       <% } %>
     </h2>
 
@@ -27,6 +27,9 @@
       <form method="GET" action="/gerar-codigo" class="admin-form">
         <button type="submit">Gerar código de cadastro</button>
       </form>
+
+      <!-- <a href="/gerenciar-carteirinhas">Ver todas as carteirinhas</a> -->
+
     <% } %>
 
     <% if (tipo === 'comum' && user) { %>
@@ -34,15 +37,52 @@
         <% if (user.foto) { %>
           <img src="<%= user.foto %>" alt="Foto" class="foto-carteirinha">
         <% } %>
-        <div class="carteirinha-info">
+        <div class="carteirinha-info" id="carteirinha-view">
           <p><b>Nome:</b> <%= user.nome %></p>
           <p><b>CPF:</b> <%= user.cpf %></p>
           <p><b>Data de nascimento:</b> <%= user.nascimento %></p>
           <p><b>Validade:</b> <%= user.validade %></p>
+          <button id="btn-alterar" onclick="toggleEdit(true)">Alterar dados</button>
         </div>
+        <form method="POST" action="/editar-carteirinha" id="form-editar-carteirinha" style="display:none;">
+          <input type="hidden" name="email" value="<%= user.email %>">
+          <div class="carteirinha-info">
+            <label>Nome:<input type="text" name="nome" value="<%= user.nome %>" required></label>
+            <label>CPF:<input type="text" name="cpf" value="<%= user.cpf %>" required></label>
+            <label>Data de nascimento:<input type="date" name="nascimento" value="<%= user.nascimento %>" required></label>
+            <label>Validade:<input type="date" name="validade" value="<%= user.validade %>" readonly></label>
+            <button type="submit">Salvar alterações</button>
+            <button type="button" onclick="toggleEdit(false)">Cancelar</button>
+          </div>
+        </form>
       </div>
+      <script>
+        function toggleEdit(show) {
+          document.getElementById('form-editar-carteirinha').style.display = show ? 'block' : 'none';
+          document.getElementById('carteirinha-view').style.display = show ? 'none' : 'block';
+        }
+      </script>
     <% } %>
 
+    <% if (tipo === 'admin' && users) { %>
+      <h3>Carteirinhas Cadastradas</h3>
+      <div class="carteirinhas-lista">
+        <% users.forEach(function(u) { %>
+          <div class="carteirinha">
+            <% if (u.foto) { %>
+              <img src="<%= u.foto %>" alt="Foto" class="foto-carteirinha">
+            <% } %>
+            <div class="carteirinha-info">
+              <p><b>Nome:</b> <%= u.nome %></p>
+              <p><b>CPF:</b> <%= u.cpf %></p>
+              <p><b>Data de nascimento:</b> <%= u.nascimento %></p>
+              <p><b>Validade:</b> <%= u.validade %></p>
+              <p><b>E-mail:</b> <%= u.email %></p>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
     <div class="links-container">
       <a href="/">Sair</a>
     </div>

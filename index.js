@@ -67,7 +67,8 @@ app.get('/forgot', (req, res) => {
 
 app.get('/gerar-codigo', (req, res) => {
   // Apenas admin pode acessar
-  res.render('success', { email: 'Administrador', tipo: 'admin', novoCodigo: gerarCodigoCadastro() });
+  const users = getUsers();
+  res.render('success', { email: 'Administrador', tipo: 'admin', novoCodigo: gerarCodigoCadastro(), users });
 });
 
 app.post('/register', upload.single('foto'), (req, res) => {
@@ -120,7 +121,8 @@ app.post('/register', upload.single('foto'), (req, res) => {
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
   if (email === ADMIN_USER.email && password === ADMIN_USER.password) {
-    return res.render('success', { email: 'Administrador', tipo: 'admin' });
+    const users = getUsers();
+    return res.render('success', { email: 'Administrador', tipo: 'admin', users });
   }
   const users = getUsers();
   const user = users.find(u => u.email === email);
@@ -182,6 +184,27 @@ app.post('/reset/', (req, res) => {
   delete recoveryCodes[email];
   // Mensagem de sucesso e redireciona para login
   res.render('login', { error: null, success: 'Senha redefinida com sucesso! Faça login.' });
+});
+
+app.post('/editar-carteirinha', (req, res) => {
+  // Apenas usuário comum pode editar sua própria carteirinha
+  const { email, nome, cpf, nascimento } = req.body;
+  let users = getUsers();
+  const idx = users.findIndex(u => u.email === email);
+  if (idx === -1) return res.redirect('/');
+  users[idx].nome = nome;
+  users[idx].cpf = cpf;
+  users[idx].nascimento = nascimento;
+  // NÃO altera users[idx].validade!
+  saveUsers(users);
+  // Renderiza a carteirinha atualizada
+  res.render('success', { email: nome, tipo: 'comum', user: users[idx] });
+});
+
+app.get('/gerenciar-carteirinhas', (req, res) => {
+  // Apenas admin pode acessar
+  const users = getUsers();
+  res.render('gerenciar-carteirinhas', { users });
 });
 
 app.listen(PORT, () => {
