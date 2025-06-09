@@ -79,6 +79,14 @@
               <p><b>Validade:</b> <%= u.validade %></p>
               <p><b>E-mail:</b> <%= u.email %></p>
             </div>
+            <div class="excluir-carteirinha" id="excluir-<%= u.email %>">
+              <button type="button" class="btn-excluir" onclick="confirmarExclusao('<%= u.email %>')">Excluir</button>
+              <span class="confirm-excluir" style="display:none;">
+                Tem certeza? 
+                <button type="button" onclick="excluirCarteirinha('<%= u.email %>', this)">Sim</button>
+                <button type="button" onclick="cancelarExclusao('<%= u.email %>')">Não</button>
+              </span>
+            </div>
           </div>
         <% }) %>
       </div>
@@ -111,5 +119,33 @@
       </div>
     </div>
   </div>
+
+  <script>
+function confirmarExclusao(email) {
+  document.querySelector(`#excluir-${CSS.escape(email)} .btn-excluir`).style.display = 'none';
+  document.querySelector(`#excluir-${CSS.escape(email)} .confirm-excluir`).style.display = 'inline';
+}
+function cancelarExclusao(email) {
+  document.querySelector(`#excluir-${CSS.escape(email)} .btn-excluir`).style.display = '';
+  document.querySelector(`#excluir-${CSS.escape(email)} .confirm-excluir`).style.display = 'none';
+}
+function excluirCarteirinha(email, btn) {
+  fetch('/admin/excluir-carteirinha', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'email=' + encodeURIComponent(email)
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // Remove o card da carteirinha da tela
+      btn.closest('.carteirinha').remove();
+    } else {
+      alert('Erro ao excluir: ' + (data.message || ''));
+      cancelarExclusao(email);
+    }
+  });
+}
+</script>
 </body>
 </html>

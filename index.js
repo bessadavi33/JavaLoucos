@@ -207,6 +207,21 @@ app.get('/gerenciar-carteirinhas', (req, res) => {
   res.render('gerenciar-carteirinhas', { users });
 });
 
+app.post('/admin/excluir-carteirinha', (req, res) => {
+  const { email } = req.body;
+  let users = getUsers();
+  const idx = users.findIndex(u => u.email === email);
+  if (idx === -1) return res.json({ success: false, message: 'Usuário não encontrado.' });
+  // Remove foto do disco se existir
+  const fotoPath = users[idx].foto ? path.join(__dirname, 'public', users[idx].foto) : null;
+  if (fotoPath && fs.existsSync(fotoPath)) {
+    fs.unlinkSync(fotoPath);
+  }
+  users.splice(idx, 1);
+  saveUsers(users);
+  res.json({ success: true });
+});
+
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
