@@ -44,13 +44,14 @@
           <p><b>Validade:</b> <%= user.validade %></p>
           <button id="btn-alterar" onclick="toggleEdit(true)">Alterar dados</button>
         </div>
-        <form method="POST" action="/editar-carteirinha" id="form-editar-carteirinha" style="display:none;">
+        <form method="POST" action="/editar-carteirinha" id="form-editar-carteirinha" enctype="multipart/form-data" style="display:none;">
           <input type="hidden" name="email" value="<%= user.email %>">
           <div class="carteirinha-info">
             <label>Nome:<input type="text" name="nome" value="<%= user.nome %>" required></label>
             <label>CPF:<input type="text" name="cpf" value="<%= user.cpf %>" required></label>
             <label>Data de nascimento:<input type="date" name="nascimento" value="<%= user.nascimento %>" required></label>
             <label>Validade:<input type="date" name="validade" value="<%= user.validade %>" readonly></label>
+            <label>Nova foto:<input type="file" name="foto" accept="image/*"></label>
             <button type="submit">Salvar alterações</button>
             <button type="button" onclick="toggleEdit(false)">Cancelar</button>
           </div>

@@ -186,8 +186,7 @@ app.post('/reset/', (req, res) => {
   res.render('login', { error: null, success: 'Senha redefinida com sucesso! Faça login.' });
 });
 
-app.post('/editar-carteirinha', (req, res) => {
-  // Apenas usuário comum pode editar sua própria carteirinha
+app.post('/editar-carteirinha', upload.single('foto'), (req, res) => {
   const { email, nome, cpf, nascimento } = req.body;
   let users = getUsers();
   const idx = users.findIndex(u => u.email === email);
@@ -195,9 +194,18 @@ app.post('/editar-carteirinha', (req, res) => {
   users[idx].nome = nome;
   users[idx].cpf = cpf;
   users[idx].nascimento = nascimento;
-  // NÃO altera users[idx].validade!
+  // Atualiza foto se enviada
+  if (req.file) {
+    // Remove foto antiga se existir
+    if (users[idx].foto) {
+      const oldFotoPath = path.join(__dirname, 'public', users[idx].foto);
+      if (fs.existsSync(oldFotoPath)) {
+        fs.unlinkSync(oldFotoPath);
+      }
+    }
+    users[idx].foto = `/uploads/${req.file.filename}`;
+  }
   saveUsers(users);
-  // Renderiza a carteirinha atualizada
   res.render('success', { email: nome, tipo: 'comum', user: users[idx] });
 });
 
