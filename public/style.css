@@ -175,21 +175,22 @@ a:hover {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .patrocinador-img {
-  height: 30px;
-  max-width: 80px;
+  height: clamp(50px, 6vw, 100px);
+  max-width: clamp(100px, 18vw, 220px);
   object-fit: contain;
-  opacity: 0.9;
-  transition: opacity 0.3s;
-  filter: brightness(0.9);
+  opacity: 0.95;
+  transition: opacity 0.3s, transform 0.3s;
+  filter: brightness(1);
 }
 
 .patrocinador-img:hover {
   opacity: 1;
   filter: brightness(1.1);
+  transform: scale(1.05);
 }
 
 /* Media Queries para Telas Maiores */
@@ -198,16 +199,16 @@ a:hover {
     padding: 40px 0;
     justify-content: center;
   }
-  
+
   .container {
     padding: 0;
   }
-  
+
   h2 {
     font-size: 1.8rem;
     margin-bottom: 25px;
   }
-  
+
   .patrocinadores-container {
     position: fixed;
     bottom: 0;
@@ -215,31 +216,19 @@ a:hover {
     background: rgba(0, 0, 0, 0.7);
     padding: 10px 0;
   }
-  
+
   .patrocinadores-title {
     display: none;
   }
-  
+
   .patrocinadores-grid {
     flex-direction: row;
     justify-content: center;
-    gap: 25px;
+    gap: 30px;
   }
-  
-  .patrocinadores-row {
-    gap: 20px;
-  }
-  
-  .patrocinador-img {
-    height: 40px;
-    max-width: 120px;
-  }
-}
 
-@media (min-width: 1024px) {
-  .patrocinador-img {
-    height: 45px;
-    max-width: 150px;
+  .patrocinadores-row {
+    gap: 24px;
   }
 }
 
@@ -294,4 +283,3 @@ a:hover {
   font-weight: 600;
   color: #aaa;
 }
-
