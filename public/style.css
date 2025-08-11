@@ -175,12 +175,12 @@ a:hover {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
 .patrocinador-img {
-  height: clamp(50px, 6vw, 100px);
-  max-width: clamp(100px, 18vw, 220px);
+  height: clamp(50px, 5vw, 80px);
+  max-width: clamp(100px, 16vw, 180px);
   object-fit: contain;
   opacity: 0.95;
   transition: opacity 0.3s, transform 0.3s;
@@ -224,11 +224,11 @@ a:hover {
   .patrocinadores-grid {
     flex-direction: row;
     justify-content: center;
-    gap: 30px;
+    gap: 26px;
   }
 
   .patrocinadores-row {
-    gap: 24px;
+    gap: 20px;
   }
 }
 
