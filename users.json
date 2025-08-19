@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "email": "davibessa23@gmail.com",
+    "password": "$2b$08$UfnQP4kExPAIXoJ0X4OidOB84O1672zs/mE50Y5Yobn20bxBpae7m",
+    "nome": "Davi Bessa Martins",
+    "cpf": "14699706606",
+    "nascimento": "2002-04-02",
+    "validade": "2026-06-30",
+    "foto": "/uploads/a69df4b5b5dfc67e84a8c4157e9b19d8"
+  }
+]

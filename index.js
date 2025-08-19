@@ -9,6 +9,11 @@ const multer = require('multer');
 
 require('dotenv').config();
 
+const { createClient } = require('@supabase/supabase-js');
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const SECRET = process.env.SECRET || 'segredo_super_secreto';
@@ -19,36 +24,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({ extended: false }));
 const upload = multer({ dest: path.join(__dirname, 'public', 'uploads') });
 
-// Simulação de "banco de dados" em arquivo JSON
-const USERS_FILE = path.join(__dirname, 'users.json');
-function getUsers() {
-  if (!fs.existsSync(USERS_FILE)) return [];
-  return JSON.parse(fs.readFileSync(USERS_FILE));
-}
-function saveUsers(users) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-}
-
 // Usuário admin fixo
 const ADMIN_USER = {
-  email: 'javaloucosapp@gmail.com',
-  password: 'javajava2025',
+  email: process.env.ADMIN_EMAIL,
+  password: process.env.ADMIN_PASS
 };
 
-// Armazena códigos de recuperação temporários
-const recoveryCodes = {};
-
-// Lista de códigos de cadastro válidos
-let codigosCadastro = [];
-
-// Função para gerar código de cadastro (admin)
+// // Função para gerar código de cadastro (admin)
 function gerarCodigoCadastro() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let codigo = '';
   for (let i = 0; i < 8; i++) {
     codigo += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  codigosCadastro.push(codigo);
+  //codigosCadastro.push(codigo);
   return codigo;
 }
 
@@ -65,24 +54,32 @@ app.get('/forgot', (req, res) => {
   res.render('forgot', { error: null, success: null });
 });
 
-app.get('/gerar-codigo', (req, res) => {
-  // Apenas admin pode acessar
-  const users = getUsers();
-  res.render('success', { email: 'Administrador', tipo: 'admin', novoCodigo: gerarCodigoCadastro(), users });
+app.get('/gerar-codigo', async (req, res) => {
+  const novoCodigo = gerarCodigoCadastro();
+  await supabase.from('codigos_cadastro').insert([{ codigo: novoCodigo }]);
+  const { data: users } = await supabase.from('usuarios').select('*');
+  res.render('success', { email: 'Administrador', tipo: 'admin', novoCodigo, users });
 });
 
-app.post('/register', upload.single('foto'), (req, res) => {
+app.post('/register', upload.single('foto'), async (req, res) => {
   const { email, password, repeatPassword, nome, cpf, nascimento, codigoCadastro } = req.body;
-  let users = getUsers();
-  if (users.find(u => u.email === email)) {
+
+  // Busca se já existe usuário no Supabase
+  const { data: users } = await supabase.from('usuarios').select('email').eq('email', email);
+  if (users && users.length > 0) {
     return res.render('register', { error: 'E-mail já cadastrado!' });
   }
-  if (!codigosCadastro.includes(codigoCadastro)) {
+
+  // Validação do código de cadastro
+  const { data: codigos } = await supabase.from('codigos_cadastro').select('*').eq('codigo', codigoCadastro).eq('usado', false);
+  if (!codigos || codigos.length === 0) {
     return res.render('register', { error: 'Código de cadastro inválido!' });
   }
+
   if (password !== repeatPassword) {
     return res.render('register', { error: 'As senhas não coincidem!' });
   }
+
   // Validação de CPF
   function validaCPF(cpf) {
     cpf = cpf.replace(/\D/g, '');
@@ -105,27 +102,68 @@ app.post('/register', upload.single('foto'), (req, res) => {
   if (!nome || !nascimento) {
     return res.render('register', { error: 'Preencha todos os campos!' });
   }
+
   // Data de validade: 1 ano após cadastro
   const dataCadastro = new Date();
   const validade = new Date(dataCadastro);
   validade.setFullYear(validade.getFullYear() + 1);
-  const hash = bcrypt.hashSync(password, 8);
-  let foto = req.file ? `/uploads/${req.file.filename}` : null;
-  users.push({ email, password: hash, nome, cpf, nascimento, validade: validade.toISOString().split('T')[0], foto });
-  saveUsers(users);
-  // Remove código usado
-  codigosCadastro = codigosCadastro.filter(c => c !== codigoCadastro);
+
+  // Upload da foto para Supabase Storage (opcional)
+  let fotoUrl = null;
+  if (req.file) {
+    const ext = path.extname(req.file.originalname) || '.jpg';
+    const supaFileName = `${Date.now()}_${email.replace(/[^a-zA-Z0-9]/g, '')}${ext}`;
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const { error: uploadError } = await supabase
+    .storage
+    .from('fotos')
+    .upload(supaFileName, fileBuffer, {
+    contentType: req.file.mimetype,
+    upsert: true
+  });
+
+    if (!uploadError) {
+      const { data } = supabase.storage.from('fotos').getPublicUrl(supaFileName);
+      fotoUrl = data.publicUrl;
+    }
+  }
+
+  // Insere usuário no Supabase
+  const { error } = await supabase
+    .from('usuarios')
+    .insert([{
+      email,
+      password: bcrypt.hashSync(password, 8),
+      nome,
+      cpf,
+      nascimento,
+      validade: validade.toISOString().split('T')[0],
+      foto: fotoUrl
+    }]);
+  if (error) {
+    return res.render('register', { error: 'Erro ao cadastrar usuário!' });
+  }
+
+  // Marca o código como usado
+  await supabase.from('codigos_cadastro').update({ usado: true }).eq('codigo', codigoCadastro);
+
   res.redirect('/');
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
+  // Admin fixo
   if (email === ADMIN_USER.email && password === ADMIN_USER.password) {
-    const users = getUsers();
+    // Busca todos os usuários do Supabase para o admin
+    const { data: users, error } = await supabase.from('usuarios').select('*');
+    if (error) return res.render('login', { error: 'Erro ao buscar usuários!' });
     return res.render('success', { email: 'Administrador', tipo: 'admin', users });
   }
-  const users = getUsers();
-  const user = users.find(u => u.email === email);
+
+  // Busca usuário comum no Supabase
+  const { data: users, error } = await supabase.from('usuarios').select('*').eq('email', email);
+  const user = users && users[0];
   if (!user || !bcrypt.compareSync(password, user.password)) {
     return res.render('login', { error: 'E-mail ou senha inválidos!' });
   }
@@ -134,24 +172,36 @@ app.post('/login', (req, res) => {
 
 app.post('/forgot', async (req, res) => {
   const { email } = req.body;
-  let users = getUsers();
-  const user = users.find(u => u.email === email);
+
+  // Busca usuário no Supabase
+  const { data: users } = await supabase.from('usuarios').select('id,email').eq('email', email);
+  const user = users && users[0];
   if (!user) {
     return res.render('forgot', { error: 'E-mail não encontrado!', success: null });
   }
+
   // Gera código de 6 dígitos
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  recoveryCodes[email] = { code, expires: Date.now() + 15 * 60 * 1000 };
+  const expiracao = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+  // Salva código na tabela recuperacao_senha
+  await supabase.from('recuperacao_senha').insert([{
+    usuario_id: user.id,
+    codigo: code,
+    expiracao
+  }]);
+
   // Configuração do Nodemailer para Gmail
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-  user: process.env.EMAIL_USER,
-  pass: process.env.EMAIL_PASS,
-},
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
   });
+
   try {
-    await transporter.verify(); // Testa conexão com o servidor SMTP
+    await transporter.verify();
     await transporter.sendMail({
       from: 'javaloucosapp@gmail.com',
       to: email,
@@ -164,69 +214,104 @@ app.post('/forgot', async (req, res) => {
   }
 });
 
-app.post('/reset/', (req, res) => {
+app.post('/reset/', async (req, res) => {
   const { email, code, password, repeatPassword } = req.body;
   if (!email || !code || !password || !repeatPassword) {
     return res.render('forgot', { error: 'Preencha todos os campos!', success: null });
   }
-  const entry = recoveryCodes[email];
-  if (!entry || entry.code !== code || Date.now() > entry.expires) {
+
+  // Busca usuário no Supabase
+  const { data: users } = await supabase.from('usuarios').select('id,email').eq('email', email);
+  const user = users && users[0];
+  if (!user) return res.render('forgot', { error: 'Usuário não encontrado!', success: null });
+
+  // Busca código de recuperação
+  const { data: tokens } = await supabase
+    .from('recuperacao_senha')
+    .select('*')
+    .eq('usuario_id', user.id)
+    .eq('codigo', code)
+    .order('criado_em', { ascending: false });
+  const token = tokens && tokens[0];
+  if (!token || new Date(token.expiracao) < new Date()) {
     return res.render('forgot', { error: 'Código inválido ou expirado!', success: null });
   }
   if (password !== repeatPassword) {
     return res.render('forgot', { error: 'As senhas não coincidem!', success: null });
   }
-  let users = getUsers();
-  const idx = users.findIndex(u => u.email === email);
-  if (idx === -1) return res.render('forgot', { error: 'Usuário não encontrado!', success: null });
-  users[idx].password = bcrypt.hashSync(password, 8);
-  saveUsers(users);
-  delete recoveryCodes[email];
-  // Mensagem de sucesso e redireciona para login
+
+  // Atualiza senha no Supabase
+  await supabase.from('usuarios').update({ password: bcrypt.hashSync(password, 8) }).eq('id', user.id);
+  await supabase.from('recuperacao_senha').delete().eq('id', token.id);
+
   res.render('login', { error: null, success: 'Senha redefinida com sucesso! Faça login.' });
 });
 
-app.post('/editar-carteirinha', upload.single('foto'), (req, res) => {
+app.post('/editar-carteirinha', upload.single('foto'), async (req, res) => {
   const { email, nome, cpf, nascimento } = req.body;
-  let users = getUsers();
-  const idx = users.findIndex(u => u.email === email);
-  if (idx === -1) return res.redirect('/');
-  users[idx].nome = nome;
-  users[idx].cpf = cpf;
-  users[idx].nascimento = nascimento;
+
+  // Busca usuário no Supabase
+  const { data: users } = await supabase.from('usuarios').select('*').eq('email', email);
+  const user = users && users[0];
+  if (!user) return res.redirect('/');
+
   // Atualiza foto se enviada
+  let fotoUrl = user.foto;
   if (req.file) {
-    // Remove foto antiga se existir
-    if (users[idx].foto) {
-      const oldFotoPath = path.join(__dirname, 'public', users[idx].foto);
-      if (fs.existsSync(oldFotoPath)) {
-        fs.unlinkSync(oldFotoPath);
-      }
+    // Remove foto antiga do Supabase Storage se existir
+    if (user.foto) {
+      const oldFotoPath = user.foto.split('/').pop();
+      await supabase.storage.from('fotos').remove([oldFotoPath]);
     }
-    users[idx].foto = `/uploads/${req.file.filename}`;
+    const ext = path.extname(req.file.originalname) || '.jpg';
+    const supaFileName = `${Date.now()}_${email.replace(/[^a-zA-Z0-9]/g, '')}${ext}`;
+    const { error: uploadError } = await supabase
+      .storage
+      .from('fotos')
+      .upload(supaFileName, fs.createReadStream(req.file.path), {
+        contentType: req.file.mimetype,
+        upsert: true
+      });
+    if (!uploadError) {
+      fotoUrl = supabase.storage.from('fotos').getPublicUrl(supaFileName).publicURL;
+    }
   }
-  saveUsers(users);
-  res.render('success', { email: nome, tipo: 'comum', user: users[idx] });
+
+  // Atualiza dados no Supabase (não altera validade)
+  await supabase.from('usuarios').update({
+    nome,
+    cpf,
+    nascimento,
+    foto: fotoUrl
+  }).eq('email', email);
+
+  // Busca usuário atualizado
+  const { data: updatedUsers } = await supabase.from('usuarios').select('*').eq('email', email);
+  res.render('success', { email: nome, tipo: 'comum', user: updatedUsers[0] });
 });
 
-app.get('/gerenciar-carteirinhas', (req, res) => {
+app.get('/gerenciar-carteirinhas', async (req, res) => {
   // Apenas admin pode acessar
-  const users = getUsers();
+  const { data: users, error } = await supabase.from('usuarios').select('*');
+  if (error) return res.render('gerenciar-carteirinhas', { users: [] });
   res.render('gerenciar-carteirinhas', { users });
 });
 
-app.post('/admin/excluir-carteirinha', (req, res) => {
+app.post('/admin/excluir-carteirinha', async (req, res) => {
   const { email } = req.body;
-  let users = getUsers();
-  const idx = users.findIndex(u => u.email === email);
-  if (idx === -1) return res.json({ success: false, message: 'Usuário não encontrado.' });
-  // Remove foto do disco se existir
-  const fotoPath = users[idx].foto ? path.join(__dirname, 'public', users[idx].foto) : null;
-  if (fotoPath && fs.existsSync(fotoPath)) {
-    fs.unlinkSync(fotoPath);
+  // Busca usuário no Supabase
+  const { data: users } = await supabase.from('usuarios').select('id,foto').eq('email', email);
+  const user = users && users[0];
+  if (!user) return res.json({ success: false, message: 'Usuário não encontrado.' });
+
+  // Remove foto do Supabase Storage se existir
+  if (user.foto) {
+    const fotoPath = user.foto.split('/').pop(); // pega o nome do arquivo
+    await supabase.storage.from('fotos').remove([fotoPath]);
   }
-  users.splice(idx, 1);
-  saveUsers(users);
+
+  // Remove usuário do banco
+  await supabase.from('usuarios').delete().eq('id', user.id);
   res.json({ success: true });
 });
 
