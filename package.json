@@ -4,7 +4,7 @@
   "description": "Aplicação Node.js dos JavaLoucos",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.cjs"
   },
   "keywords": [],
   "author": "bessadavi33",
