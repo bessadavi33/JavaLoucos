@@ -114,18 +114,23 @@ app.post('/register', upload.single('foto'), async (req, res) => {
     const ext = path.extname(req.file.originalname) || '.jpg';
     const supaFileName = `${Date.now()}_${email.replace(/[^a-zA-Z0-9]/g, '')}${ext}`;
     const fileBuffer = fs.readFileSync(req.file.path);
+
     const { error: uploadError } = await supabase
-    .storage
-    .from('fotos')
-    .upload(supaFileName, fileBuffer, {
-    contentType: req.file.mimetype,
-    upsert: true
-  });
+      .storage
+      .from('fotos')
+      .upload(supaFileName, fileBuffer, {
+        contentType: req.file.mimetype,
+        upsert: true
+      });
+
 
     if (!uploadError) {
-      const { data } = supabase.storage.from('fotos').getPublicUrl(supaFileName);
-      fotoUrl = data.publicUrl;
+      const { data: urlData } = supabase.storage.from('fotos').getPublicUrl(supaFileName);
+      fotoUrl = urlData.publicUrl;
     }
+
+    // Remove arquivo local
+    fs.unlinkSync(req.file.path);
   }
 
   // Insere usuário no Supabase
@@ -140,6 +145,7 @@ app.post('/register', upload.single('foto'), async (req, res) => {
       validade: validade.toISOString().split('T')[0],
       foto: fotoUrl
     }]);
+
   if (error) {
     return res.render('register', { error: 'Erro ao cadastrar usuário!' });
   }
@@ -149,6 +155,7 @@ app.post('/register', upload.single('foto'), async (req, res) => {
 
   res.redirect('/');
 });
+
 
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
@@ -250,45 +257,63 @@ app.post('/reset/', async (req, res) => {
 app.post('/editar-carteirinha', upload.single('foto'), async (req, res) => {
   const { email, nome, cpf, nascimento } = req.body;
 
-  // Busca usuário no Supabase
-  const { data: users } = await supabase.from('usuarios').select('*').eq('email', email);
+  // Busca usuário
+  const { data: users, error: userError } = await supabase.from('usuarios').select('*').eq('email', email);
   const user = users && users[0];
+
   if (!user) return res.redirect('/');
 
   // Atualiza foto se enviada
   let fotoUrl = user.foto;
   if (req.file) {
+
     // Remove foto antiga do Supabase Storage se existir
     if (user.foto) {
-      const oldFotoPath = user.foto.split('/').pop();
-      await supabase.storage.from('fotos').remove([oldFotoPath]);
+      const prefix = "/object/public/fotos/";
+      const oldFotoPath = user.foto.includes(prefix) ? user.foto.split(prefix)[1] : user.foto;
+      const { error: removeError } = await supabase.storage.from('fotos').remove([oldFotoPath]);
     }
+
+    // Gera novo nome
     const ext = path.extname(req.file.originalname) || '.jpg';
     const supaFileName = `${Date.now()}_${email.replace(/[^a-zA-Z0-9]/g, '')}${ext}`;
+
+    // Lê arquivo em buffer
+    const fileBuffer = fs.readFileSync(req.file.path);
+
     const { error: uploadError } = await supabase
       .storage
       .from('fotos')
-      .upload(supaFileName, fs.createReadStream(req.file.path), {
+      .upload(supaFileName, fileBuffer, {
         contentType: req.file.mimetype,
         upsert: true
       });
-    if (!uploadError) {
-      fotoUrl = supabase.storage.from('fotos').getPublicUrl(supaFileName).publicURL;
+
+    if (uploadError) {
+    } else {
+      const { data: urlData } = supabase.storage.from('fotos').getPublicUrl(supaFileName);
+      fotoUrl = urlData.publicUrl;
     }
+
+    // Remove arquivo local
+    fs.unlinkSync(req.file.path);
+  } else {
   }
 
-  // Atualiza dados no Supabase (não altera validade)
-  await supabase.from('usuarios').update({
+  // Atualiza dados
+  const { error: updateError } = await supabase.from('usuarios').update({
     nome,
     cpf,
     nascimento,
     foto: fotoUrl
   }).eq('email', email);
 
-  // Busca usuário atualizado
-  const { data: updatedUsers } = await supabase.from('usuarios').select('*').eq('email', email);
-  res.render('success', { email: nome, tipo: 'comum', user: updatedUsers[0] });
+  // Busca atualizado
+  const { data: updatedUsers, error: updatedError } = await supabase.from('usuarios').select('*').eq('email', email);
+
+  res.render('success', { email, tipo: 'comum', user: updatedUsers[0] });
 });
+
 
 app.get('/gerenciar-carteirinhas', async (req, res) => {
   // Apenas admin pode acessar
@@ -299,6 +324,7 @@ app.get('/gerenciar-carteirinhas', async (req, res) => {
 
 app.post('/admin/excluir-carteirinha', async (req, res) => {
   const { email } = req.body;
+
   // Busca usuário no Supabase
   const { data: users } = await supabase.from('usuarios').select('id,foto').eq('email', email);
   const user = users && users[0];
